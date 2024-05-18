@@ -30,7 +30,7 @@ jobs:
           - {VERSION: "3.12", TOXENV: "py312", NOTE: "minimal", SODIUM_INSTALL_MINIMAL: "1"}
     name: "Linux ${{ matrix.PYTHON.TOXENV }} ${{ matrix.PYTHON.NOTE }}"
     steps:
-      - uses: actions/checkout@v3.6.0
+      - uses: actions/checkout@v4.1.6
       - name: Setup python
         uses: actions/setup-python@v5
         with:
@@ -64,16 +64,22 @@ jobs:
         if: matrix.PYTHON.COVERAGE != 'false'
 
   macos:
-    runs-on: macos-latest
+    runs-on: ${{ matrix.RUNNER }}
     strategy:
       matrix:
+        RUNNER:
+          - 'macos-13'
+          - 'macos-latest'
         PYTHON:
           - {VERSION: "3.6", TOXENV: "py36"}
           - {VERSION: "3.12", TOXENV: "py312"}
           - {VERSION: "3.12", TOXENV: "py312", NOTE: " (minimal build)", SODIUM_INSTALL_MINIMAL: "1"}
-    name: "Python ${{ matrix.PYTHON.VERSION }}${{ matrix.PYTHON.NOTE }} on macOS"
+        exclude:
+          - PYTHON: {VERSION: "3.6", TOXENV: "py36"}
+            RUNNER: macos-latest
+    name: "Python ${{ matrix.PYTHON.VERSION }}${{ matrix.PYTHON.NOTE }} on ${{ matrix.RUNNER }}"
     steps:
-      - uses: actions/checkout@v3.6.0
+      - uses: actions/checkout@v4.1.6
       - name: Setup python
         uses: actions/setup-python@v5
         with:
@@ -106,7 +112,7 @@ jobs:
           - {VERSION: "3.12", TOXENV: "py312", SODIUM_MSVC_VERSION: "v142"}
     name: "Python ${{ matrix.PYTHON.VERSION }} on Windows ${{ matrix.WINDOWS.ARCH }}"
     steps:
-      - uses: actions/checkout@v3.6.0
+      - uses: actions/checkout@v4.1.6
       - name: Setup python
         uses: actions/setup-python@v5
         with:

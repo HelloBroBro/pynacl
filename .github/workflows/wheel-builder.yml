@@ -20,7 +20,11 @@ on:
 jobs:
   manylinux:
     runs-on: ubuntu-latest
-    container: ghcr.io/pyca/${{ matrix.MANYLINUX.CONTAINER }}
+    container:
+      image: ghcr.io/pyca/${{ matrix.MANYLINUX.CONTAINER }}
+      volumes:
+        - /staticnodehost:/staticnodecontainer:rw,rshared
+        - /staticnodehost:/__e/node20:ro,rshared
     strategy:
       matrix:
         PYTHON:
@@ -32,7 +36,10 @@ jobs:
 
     name: "${{ matrix.PYTHON.VERSION }} for ${{ matrix.MANYLINUX.NAME }}"
     steps:
-      - uses: actions/checkout@v3.6.0
+      - name: Ridiculous-er workaround for static node20
+        run: |
+          cp -R /staticnode/* /staticnodecontainer/
+      - uses: actions/checkout@v4.1.6
         with:
           # The tag to build or the tag received by the tag event
           ref: ${{ github.event.inputs.version || github.ref }}
@@ -56,7 +63,7 @@ jobs:
 
       - run: mkdir pynacl-wheelhouse
       - run: mv wheelhouse/PyNaCl*.whl pynacl-wheelhouse/
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v4
         with:
           name: "pynacl-${{ github.event.inputs.version }}-${{ matrix.MANYLINUX.NAME }}-  ${{ matrix.PYTHON.VERSION }}"
 
@@ -72,7 +79,7 @@ jobs:
             BIN_PATH: '/Library/Frameworks/Python.framework/Versions/3.10/bin/python3'
     name: "Python ${{ matrix.PYTHON.VERSION }} for ABI ${{ matrix.PYTHON.ABI_VERSION }} on macOS"
     steps:
-      - uses: actions/checkout@v3.6.0
+      - uses: actions/checkout@v4.1.6
         with:
           # The tag to build or the tag received by the tag event
           ref: ${{ github.event.inputs.version || github.ref }}
@@ -87,10 +94,10 @@ jobs:
       - run: venv/bin/pip install -U pip wheel cffi
       - name: Make sdist
         run: venv/bin/python setup.py sdist
-      - run: tar zxvf dist/PyNaCl*.tar.gz && mkdir wheelhouse
+      - run: tar zxvf dist/pynacl*.tar.gz && mkdir wheelhouse
       - name: Build the wheel
         run: |
-            cd PyNaCl*
+            cd pynacl*
             LIBSODIUM_MAKE_ARGS="-j$(sysctl -n hw.ncpu)" \
                 ../venv/bin/python setup.py bdist_wheel --py-limited-api=${{ matrix.PYTHON.ABI_VERSION }} && mv dist/PyNaCl*.whl ../wheelhouse
         env:
@@ -105,7 +112,7 @@ jobs:
 
       - run: mkdir pynacl-wheelhouse
       - run: mv wheelhouse/PyNaCl*.whl pynacl-wheelhouse/
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v4
         with:
           name: "pynacl-${{ github.event.inputs.version }}-macOS-${{ matrix.PYTHON.VERSION }}"
           path: pynacl-wheelhouse/
@@ -120,7 +127,7 @@ jobs:
           - {VERSION: "3.9", SODIUM_MSVC_VERSION: "v142", "ABI_VERSION": "cp36"}
     name: "${{ matrix.PYTHON.VERSION }} ${{ matrix.WINDOWS.ARCH }} ${{ matrix.PYTHON.ABI_VERSION }}"
     steps:
-      - uses: actions/checkout@v3.6.0
+      - uses: actions/checkout@v4.1.6
         with:
           # The tag to build or the tag received by the tag event
           ref: ${{ github.event.inputs.version || github.ref }}
@@ -162,7 +169,7 @@ jobs:
           python -c "import nacl.signing; key = nacl.signing.SigningKey.generate();signature = key.sign(b'test'); key.verify_key.verify(signature)"
       - run: mkdir pynacl-wheelhouse
       - run: move wheelhouse\PyNaCl*.whl pynacl-wheelhouse\
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v4
         with:
           name: "pynacl-${{ github.event.inputs.version }}-win-${{ matrix.WINDOWS.ARCH }}-${{ matrix.PYTHON.VERSION }}"
           path: pynacl-wheelhouse\
